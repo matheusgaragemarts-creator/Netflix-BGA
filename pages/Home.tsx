@@ -17,33 +17,31 @@ const Home: React.FC<HomeProps> = ({ videos, pdfs, progress }) => {
   const Row = ({ title, items, type }: { title: string, items: any[], type: 'video' | 'pdf' }) => {
     if (items.length === 0) return null;
     return (
-      <div className="mb-8 md:mb-12 animate-in fade-in duration-500">
-        <h3 className="text-lg md:text-2xl font-bold mb-4 px-4 md:px-12 flex items-center group cursor-pointer relative z-10">
+      <div className="mb-12 animate-in fade-in duration-700">
+        <h3 className="text-xl md:text-2xl font-bold mb-4 px-4 md:px-12 flex items-center group cursor-pointer">
           {title}
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-[#003376] text-xs mt-1">Ver tudo <Icons.ChevronRight /></span>
+          <Icons.ChevronRight />
         </h3>
-        <div className="relative">
-          <div className="flex overflow-x-auto overflow-y-visible space-x-2 md:space-x-4 px-4 md:px-12 no-scrollbar pb-6 md:pb-10">
+        <div className="relative group/row">
+          <div className="flex overflow-x-auto overflow-y-visible space-x-4 px-4 md:px-12 no-scrollbar pb-8">
             {items.map((item) => {
               const isCompleted = type === 'video' 
                 ? progress.videos[item.id]?.completed 
                 : progress.pdfs[item.id]?.completed;
 
-              const cardThumbnail = item.thumbnail || (type === 'video' ? 'https://picsum.photos/seed/vid/400/225' : 'https://picsum.photos/seed/doc/400/225');
-
               return (
                 <div 
                   key={item.id}
-                  className="relative min-w-[160px] md:min-w-[280px] h-[90px] md:h-[157px] rounded-sm transition-all duration-300 transform hover:scale-110 hover:z-50 cursor-pointer shadow-lg group"
+                  className="relative min-w-[200px] md:min-w-[300px] aspect-video rounded-sm transition-all duration-300 transform hover:scale-110 hover:z-50 cursor-pointer shadow-2xl overflow-hidden group/card border border-white/5"
                   onClick={() => navigate(type === 'video' ? `/watch/${item.id}` : `/read/${item.id}`)}
                 >
-                  <img src={cardThumbnail} className="w-full h-full object-cover rounded-sm border border-gray-800" alt={item.title} />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end">
+                  <img src={item.thumbnail || 'https://picsum.photos/seed/bga/400/225'} className="w-full h-full object-cover" alt={item.title} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity p-4 flex flex-col justify-end">
                     <div className="flex items-center space-x-2 mb-2">
-                      <div className="p-1 rounded-full bg-white text-black"><Icons.Play /></div>
-                      {isCompleted && <div className="ml-auto"><Icons.Check /></div>}
+                      <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center scale-90"><Icons.Play /></div>
+                      {isCompleted && <Icons.Check />}
                     </div>
-                    <h4 className="text-xs md:text-sm font-bold truncate">{item.title}</h4>
+                    <h4 className="text-sm font-black truncate uppercase">{item.title}</h4>
                   </div>
                 </div>
               );
@@ -56,48 +54,38 @@ const Home: React.FC<HomeProps> = ({ videos, pdfs, progress }) => {
 
   return (
     <div className="pb-20 bg-[#141414] min-h-screen">
-      {/* Hero Section */}
       {heroVideo ? (
-        <div className="relative h-[75vh] md:h-[95vh] w-full overflow-hidden">
-          <div className="absolute inset-0">
-            <img src={heroVideo.thumbnail} className="w-full h-full object-cover brightness-[0.5] scale-105" alt="hero" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/20 to-transparent" />
-          </div>
-          <div className="absolute bottom-[20%] md:bottom-[25%] left-4 md:left-12 max-w-xl z-20">
-            <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tight uppercase leading-[0.9]">{heroVideo.title}</h1>
-            <p className="text-sm md:text-xl text-gray-200 mb-8 line-clamp-3 max-w-lg">{heroVideo.description}</p>
-            <button 
-              onClick={() => navigate(`/watch/${heroVideo.id}`)}
-              className="flex items-center space-x-2 px-6 py-2.5 md:px-10 md:py-3.5 bg-white text-black rounded-md font-bold hover:bg-gray-200 transition-all shadow-xl"
-            >
-              <Icons.Play />
-              <span>Assistir Agora</span>
-            </button>
+        <div className="relative h-[85vh] w-full overflow-hidden mb-[-100px]">
+          <img src={heroVideo.thumbnail} className="w-full h-full object-cover brightness-[0.4] scale-105" alt="hero" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-black/30" />
+          <div className="absolute bottom-[30%] left-4 md:left-12 max-w-2xl z-20">
+            <h1 className="text-5xl md:text-7xl font-black mb-4 tracking-tighter uppercase leading-[0.85]">{heroVideo.title}</h1>
+            <p className="text-sm md:text-lg text-gray-300 mb-8 line-clamp-3 font-medium max-w-lg">{heroVideo.description}</p>
+            <div className="flex items-center space-x-3">
+              <button 
+                onClick={() => navigate(`/watch/${heroVideo.id}`)}
+                className="flex items-center space-x-2 px-8 py-3 bg-white text-black rounded font-black hover:bg-gray-200 transition-all uppercase tracking-tighter"
+              >
+                <Icons.Play />
+                <span>Assistir</span>
+              </button>
+              <button className="flex items-center space-x-2 px-8 py-3 bg-white/20 text-white rounded font-black hover:bg-white/30 transition-all uppercase tracking-tighter backdrop-blur-md">
+                <Icons.Info />
+                <span>Detalhes</span>
+              </button>
+            </div>
           </div>
         </div>
       ) : (
-        <div className="relative h-[80vh] flex flex-col items-center justify-center text-center p-8">
-          <div className="text-8xl mb-8 animate-bounce">💈</div>
-          <h1 className="text-4xl font-black mb-4 uppercase tracking-tighter">Sua Barbearia na Palma da Mão</h1>
-          <p className="text-gray-400 max-w-md mx-auto mb-8 text-lg">
-            Nenhum conteúdo carregado neste aparelho ainda.
-          </p>
-          <div className="bg-white/5 border border-white/10 p-6 rounded-lg max-w-sm">
-            <h4 className="text-[#003376] font-bold uppercase text-xs mb-2 tracking-widest">Atenção Barbeiro</h4>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              Solicite ao seu gestor o arquivo de <b>Backup BGA</b> via WhatsApp e clique no ícone de sincronizar (🔄) no topo da tela para liberar seus vídeos e treinamentos.
-            </p>
-          </div>
+        <div className="h-[60vh] flex flex-col items-center justify-center text-center px-4">
+          <h1 className="text-4xl font-black mb-4 text-[#003376]">BEM-VINDO À BGA</h1>
+          <p className="text-gray-500 max-w-md">Conecte sua conta à nuvem para liberar os treinamentos exclusivos da sua barbearia.</p>
         </div>
       )}
 
-      <div className={heroVideo ? "-mt-12 md:-mt-20 relative z-30" : "pt-12"}>
-        {videos.length > 0 || pdfs.length > 0 ? (
-          <>
-            <Row title="Vídeos de Treinamento" items={videos} type="video" />
-            <Row title="Documentação Técnica (POPs)" items={pdfs} type="pdf" />
-          </>
-        ) : null}
+      <div className="relative z-30">
+        <Row title="Lançamentos de Treinamento" items={videos} type="video" />
+        <Row title="Documentação de Suporte" items={pdfs} type="pdf" />
       </div>
     </div>
   );

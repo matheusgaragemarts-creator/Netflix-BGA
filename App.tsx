@@ -40,25 +40,19 @@ const App: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Inicializa Firebase se houver config
   useEffect(() => {
     if (cloudConfig) {
       const success = initFirebase(cloudConfig);
       if (success) {
-        // Sincroniza em tempo real com a Nuvem
         const unsubVideos = syncCollection('videos', (data) => setVideos(data as Video[]));
         const unsubPdfs = syncCollection('pdfs', (data) => setPdfs(data as Pdf[]));
         const unsubCats = syncCollection('categories', (data) => setCategories(data as Category[]));
         const unsubUsers = syncCollection('users', (data) => setCollaborators(data as User[]));
-        
-        return () => {
-          unsubVideos(); unsubPdfs(); unsubCats(); unsubUsers();
-        };
+        return () => { unsubVideos(); unsubPdfs(); unsubCats(); unsubUsers(); };
       }
     }
   }, [cloudConfig]);
 
-  // Persistência Local
   useEffect(() => { localStorage.setItem('bga_progress', JSON.stringify(progress)); }, [progress]);
   useEffect(() => { localStorage.setItem('bga_videos', JSON.stringify(videos)); }, [videos]);
   useEffect(() => { localStorage.setItem('bga_pdfs', JSON.stringify(pdfs)); }, [pdfs]);
@@ -88,22 +82,34 @@ const App: React.FC = () => {
   const updateCloudConfig = (config: any) => {
     setCloudConfig(config);
     localStorage.setItem('bga_cloud_config', JSON.stringify(config));
-    alert('Configuração de Nuvem salva! Reiniciando sincronização...');
+    alert('Nuvem conectada! Atualizando...');
     window.location.reload();
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#141414]">
       {user && location.pathname !== '/login' && (
-        <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-4 md:px-12 py-3 md:py-5 bg-black/90 border-b border-white/5 backdrop-blur-md">
-          <div className="flex items-center space-x-6">
-            <div onClick={() => navigate('/home')} className="text-[#003376] font-black text-2xl cursor-pointer">NETFLIX BGA</div>
-            {cloudConfig && <div className="text-[10px] bg-green-500/10 text-green-500 px-2 py-0.5 rounded-full font-bold">● ONLINE (NUVEM)</div>}
+        <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-4 md:px-12 py-4 bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm">
+          <div className="flex items-center space-x-8">
+            <div onClick={() => navigate('/home')} className="text-[#003376] font-black text-2xl cursor-pointer tracking-tighter">NETFLIX BGA</div>
+            <div className="hidden md:flex items-center space-x-5 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+              <button onClick={() => navigate('/home')} className={`hover:text-white transition-colors ${location.pathname === '/home' ? 'text-white' : ''}`}>Início</button>
+              <button onClick={() => navigate('/videos')} className={`hover:text-white transition-colors ${location.pathname === '/videos' ? 'text-white' : ''}`}>Vídeos</button>
+              <button onClick={() => navigate('/pops')} className={`hover:text-white transition-colors ${location.pathname === '/pops' ? 'text-white' : ''}`}>POPs</button>
+            </div>
           </div>
           <div className="flex items-center space-x-6">
-            <button onClick={() => navigate('/videos')} className="text-xs font-bold text-gray-400 hover:text-white">VÍDEOS</button>
-            {user.role === Role.ADMIN && <button onClick={() => navigate('/admin')} className="text-xs font-bold text-blue-400">PAINEL ADMIN</button>}
-            <button onClick={handleLogout} className="text-xs font-bold text-red-500">SAIR</button>
+            {cloudConfig && <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.8)]" title="Sincronizado na Nuvem"></div>}
+            {user.role === Role.ADMIN && (
+              <button onClick={() => navigate('/admin')} className="text-[10px] font-black bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded transition-all">ADMIN</button>
+            )}
+            <div className="relative group cursor-pointer">
+              <img src={user.avatar} className="w-8 h-8 rounded border border-white/20" alt="profile" />
+              <div className="absolute right-0 mt-2 w-48 bg-black/95 border border-white/10 rounded hidden group-hover:block overflow-hidden shadow-2xl">
+                <button onClick={() => navigate('/meu-progresso')} className="w-full text-left p-3 hover:bg-white/10 text-xs font-bold border-b border-white/5">Meu Progresso</button>
+                <button onClick={handleLogout} className="w-full text-left p-3 hover:bg-red-600/20 text-red-500 text-xs font-bold">Sair</button>
+              </div>
+            </div>
           </div>
         </nav>
       )}
@@ -124,8 +130,7 @@ const App: React.FC = () => {
                 onAddVideo={async v => { setVideos(p => [v, ...p]); if (cloudConfig) await saveToCloud('videos', v.id, v); }}
                 onAddCollaborator={async v => { setCollaborators(p => [...p, v]); if (cloudConfig) await saveToCloud('users', v.id, v); }}
                 onAddCategory={async v => { setCategories(p => [...p, v]); if (cloudConfig) await saveToCloud('categories', v.id, v); }}
-                // Outras funções de edição/deleção...
-                onEditVideo={v => {}} onDeleteVideo={id => {}} onAddPdf={v => {}} onEditPdf={v => {}} onDeletePdf={id => {}} onDeleteCollaborator={id => {}} onEditCategory={v => {}} onDeleteCategory={id => {}} onRestoreBackup={d => {}}
+                onEditVideo={() => {}} onDeleteVideo={() => {}} onAddPdf={() => {}} onEditPdf={() => {}} onDeletePdf={() => {}} onDeleteCollaborator={() => {}} onEditCategory={() => {}} onDeleteCategory={() => {}} onRestoreBackup={() => {}}
               />
             </ProtectedRoute>
           } />
