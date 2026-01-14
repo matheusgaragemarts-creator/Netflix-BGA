@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Video, Pdf, ProgressState } from '../types';
 import { Icons } from '../constants';
@@ -68,7 +68,7 @@ const Home: React.FC<HomeProps> = ({ videos, pdfs, progress }) => {
             <p className="text-sm md:text-xl text-gray-200 mb-8 line-clamp-3 max-w-lg">{heroVideo.description}</p>
             <button 
               onClick={() => navigate(`/watch/${heroVideo.id}`)}
-              className="flex items-center space-x-2 px-6 py-2.5 md:px-10 md:py-3.5 bg-white text-black rounded-md font-bold hover:bg-gray-200 transition-all"
+              className="flex items-center space-x-2 px-6 py-2.5 md:px-10 md:py-3.5 bg-white text-black rounded-md font-bold hover:bg-gray-200 transition-all shadow-xl"
             >
               <Icons.Play />
               <span>Assistir Agora</span>
@@ -76,24 +76,28 @@ const Home: React.FC<HomeProps> = ({ videos, pdfs, progress }) => {
           </div>
         </div>
       ) : (
-        <div className="relative h-[60vh] flex flex-col items-center justify-center text-center p-8 bg-gradient-to-b from-[#003376]/20 to-transparent border-b border-white/5">
-          <div className="text-6xl mb-6 opacity-40">💈</div>
-          <h1 className="text-4xl font-bold mb-4">Bem-vindo à Netflix BGA</h1>
-          <p className="text-gray-400 max-w-md mx-auto">Sua plataforma está pronta. Comece agora acessando o Painel Administrativo para cadastrar categorias e treinamentos.</p>
+        <div className="relative h-[80vh] flex flex-col items-center justify-center text-center p-8">
+          <div className="text-8xl mb-8 animate-bounce">💈</div>
+          <h1 className="text-4xl font-black mb-4 uppercase tracking-tighter">Sua Barbearia na Palma da Mão</h1>
+          <p className="text-gray-400 max-w-md mx-auto mb-8 text-lg">
+            Nenhum conteúdo carregado neste aparelho ainda.
+          </p>
+          <div className="bg-white/5 border border-white/10 p-6 rounded-lg max-w-sm">
+            <h4 className="text-[#003376] font-bold uppercase text-xs mb-2 tracking-widest">Atenção Barbeiro</h4>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Solicite ao seu gestor o arquivo de <b>Backup BGA</b> via WhatsApp e clique no ícone de sincronizar (🔄) no topo da tela para liberar seus vídeos e treinamentos.
+            </p>
+          </div>
         </div>
       )}
 
       <div className={heroVideo ? "-mt-12 md:-mt-20 relative z-30" : "pt-12"}>
-        {videos.length === 0 && pdfs.length === 0 ? (
-          <div className="px-4 md:px-12 py-12 text-center text-gray-600 italic">
-            Nenhum conteúdo disponível no momento.
-          </div>
-        ) : (
+        {videos.length > 0 || pdfs.length > 0 ? (
           <>
-            <Row title="Lançamentos" items={videos} type="video" />
-            <Row title="Procedimentos Operacionais" items={pdfs} type="pdf" />
+            <Row title="Vídeos de Treinamento" items={videos} type="video" />
+            <Row title="Documentação Técnica (POPs)" items={pdfs} type="pdf" />
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );
