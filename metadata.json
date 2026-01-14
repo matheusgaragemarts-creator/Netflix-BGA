@@ -1,0 +1,7 @@
+{
+  "name": "Netflix BGA - Barbershop LMS",
+  "description": "A Netflix-style corporate LMS for barbershops featuring video training, POP documentation, interactive quizzes, and progress tracking.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
