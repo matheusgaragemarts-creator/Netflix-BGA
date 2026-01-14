@@ -13,6 +13,7 @@ import MyProgress from './pages/MyProgress.tsx';
 import Videos from './pages/Videos.tsx';
 import Pops from './pages/Pops.tsx';
 import SearchResults from './pages/SearchResults.tsx';
+import { initSupabase, syncTable, saveToCloud, deleteFromCloud } from './services/supabaseService.ts';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; roles?: Role[]; user: User | null }> = ({ children, roles, user }) => {
   if (!user) return <Navigate to="/login" />;
@@ -25,7 +26,8 @@ const Navbar: React.FC<{
   location: Location; 
   navigate: NavigateFunction; 
   handleLogout: () => void;
-}> = ({ user, location, navigate, handleLogout }) => {
+  isCloudActive: boolean;
+}> = ({ user, location, navigate, handleLogout, isCloudActive }) => {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -45,9 +47,10 @@ const Navbar: React.FC<{
       <div className="flex items-center space-x-6 md:space-x-10">
         <div 
           onClick={() => navigate(user.role === Role.ADMIN ? '/admin' : '/home')}
-          className="text-[#003376] font-black text-xl md:text-3xl cursor-pointer tracking-tighter hover:brightness-125 transition-all"
+          className="text-[#003376] font-black text-xl md:text-3xl cursor-pointer tracking-tighter hover:brightness-125 transition-all flex items-center gap-2"
         >
           NETFLIX BGA
+          {isCloudActive && <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(34,197,94,0.8)]" title="Nuvem Conectada"></div>}
         </div>
         <div className="hidden lg:flex items-center space-x-6 text-sm font-semibold">
           <button onClick={() => navigate('/home')} className={`transition-colors hover:text-gray-300 ${location.pathname === '/home' ? 'text-white' : 'text-gray-400'}`}>Início</button>
@@ -62,12 +65,7 @@ const Navbar: React.FC<{
 
       <div className="flex items-center space-x-4 md:space-x-6">
         <div className="relative flex items-center group">
-          <button 
-            onClick={() => setIsSearchVisible(!isSearchVisible)}
-            className="text-white hover:text-[#003376] transition-colors p-1"
-          >
-            <Icons.Search />
-          </button>
+          <button onClick={() => setIsSearchVisible(!isSearchVisible)} className="text-white hover:text-[#003376] transition-colors p-1"><Icons.Search /></button>
           {isSearchVisible && (
             <form onSubmit={handleSearchSubmit}>
               <input
@@ -91,10 +89,7 @@ const Navbar: React.FC<{
               <p className="text-gray-500 text-xs truncate">{user.email}</p>
             </div>
             <div className="p-1">
-               <button 
-                onClick={handleLogout}
-                className="w-full text-left p-3 hover:bg-[#003376]/20 hover:text-white text-gray-400 text-sm flex items-center space-x-3 transition-colors rounded-sm"
-              >
+               <button onClick={handleLogout} className="w-full text-left p-3 hover:bg-[#003376]/20 hover:text-white text-gray-400 text-sm flex items-center space-x-3 transition-colors rounded-sm">
                 <Icons.Logout />
                 <span className="font-medium">Sair da BGA</span>
               </button>
@@ -112,25 +107,47 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : defaultValue;
   };
 
+  const [supabaseConfig, setSupabaseConfig] = useState(() => getInitial('bga_supabase_config', null));
   const [user, setUser] = useState<User | null>(() => getInitial('bga_user', null));
   const [videos, setVideos] = useState<Video[]>(() => getInitial('bga_videos', MOCK_VIDEOS));
   const [pdfs, setPdfs] = useState<Pdf[]>(() => getInitial('bga_pdfs', MOCK_PDFS));
   const [categories, setCategories] = useState<Category[]>(() => getInitial('bga_categories', MOCK_CATEGORIES));
   const [collaborators, setCollaborators] = useState<User[]>(() => getInitial('bga_colabs', []));
   const [progress, setProgress] = useState<ProgressState>(() => getInitial('bga_progress', {
-    videos: {},
-    pdfs: {},
-    quizzes: []
+    videos: {}, pdfs: {}, quizzes: []
   }));
 
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Inicializar e Sincronizar Supabase
+  useEffect(() => {
+    if (supabaseConfig?.url && supabaseConfig?.key) {
+      const success = initSupabase(supabaseConfig.url, supabaseConfig.key);
+      if (success) {
+        const unsubVideos = syncTable('videos', (data) => setVideos(data));
+        const unsubPdfs = syncTable('pdfs', (data) => setPdfs(data));
+        const unsubCats = syncTable('categories', (data) => setCategories(data));
+        const unsubUsers = syncTable('users', (data) => setCollaborators(data));
+        
+        return () => {
+          unsubVideos(); unsubPdfs(); unsubCats(); unsubUsers();
+        };
+      }
+    }
+  }, [supabaseConfig]);
+
   useEffect(() => { localStorage.setItem('bga_progress', JSON.stringify(progress)); }, [progress]);
-  useEffect(() => { localStorage.setItem('bga_videos', JSON.stringify(videos)); }, [videos]);
-  useEffect(() => { localStorage.setItem('bga_pdfs', JSON.stringify(pdfs)); }, [pdfs]);
-  useEffect(() => { localStorage.setItem('bga_categories', JSON.stringify(categories)); }, [categories]);
-  useEffect(() => { localStorage.setItem('bga_colabs', JSON.stringify(collaborators)); }, [collaborators]);
+  
+  // Persistência local como fallback
+  useEffect(() => {
+    if (!supabaseConfig) {
+      localStorage.setItem('bga_videos', JSON.stringify(videos));
+      localStorage.setItem('bga_pdfs', JSON.stringify(pdfs));
+      localStorage.setItem('bga_categories', JSON.stringify(categories));
+      localStorage.setItem('bga_colabs', JSON.stringify(collaborators));
+    }
+  }, [videos, pdfs, categories, collaborators, supabaseConfig]);
 
   const handleLogin = (selectedUser: User) => {
     setUser(selectedUser);
@@ -144,110 +161,99 @@ const App: React.FC = () => {
     navigate('/login');
   };
 
-  const handleRestoreBackup = (data: any) => {
-    if (data.videos) setVideos(data.videos);
-    if (data.pdfs) setPdfs(data.pdfs);
-    if (data.categories) setCategories(data.categories);
-    if (data.collaborators) setCollaborators(data.collaborators);
-    if (data.progress) setProgress(data.progress);
-    alert('Backup restaurado com sucesso!');
+  const updateCloudConfig = (config: { url: string; key: string }) => {
+    setSupabaseConfig(config);
+    localStorage.setItem('bga_supabase_config', JSON.stringify(config));
+    alert('Conexão Cloud configurada com sucesso!');
+    window.location.reload();
   };
 
-  const handleAddVideo = (newVideo: Video) => setVideos(prev => [newVideo, ...prev]);
-  const handleEditVideo = (updated: Video) => setVideos(prev => prev.map(v => v.id === updated.id ? updated : v));
-  const handleDeleteVideo = (id: string) => setVideos(prev => prev.filter(v => v.id !== id));
-
-  const handleAddPdf = (newPdf: Pdf) => setPdfs(prev => [newPdf, ...prev]);
-  const handleEditPdf = (updated: Pdf) => setPdfs(prev => prev.map(p => p.id === updated.id ? updated : p));
-  const handleDeletePdf = (id: string) => setPdfs(prev => prev.filter(p => p.id !== id));
-
-  const handleAddCollaborator = (newColab: User) => setCollaborators(prev => [...prev, newColab]);
-  const handleDeleteCollaborator = (id: string) => setCollaborators(prev => prev.filter(c => c.id !== id));
-
-  const handleAddCategory = (newCat: Category) => setCategories(prev => [...prev, newCat]);
-  const handleEditCategory = (updatedCat: Category) => setCategories(prev => prev.map(c => c.id === updatedCat.id ? updatedCat : c));
-  const handleDeleteCategory = (catId: string) => setCategories(prev => prev.filter(c => c.id !== catId));
-
-  const updateVideoProgress = (videoId: string, watchedTime: number, completed: boolean) => {
-    setProgress(prev => ({
-      ...prev,
-      videos: {
-        ...prev.videos,
-        [videoId]: {
-          videoId,
-          watchedTime,
-          completed: prev.videos[videoId]?.completed || completed,
-          lastWatched: new Date().toISOString()
-        }
-      }
-    }));
+  // Funções CRUD com Nuvem
+  const handleAddVideo = async (newVideo: Video) => {
+    setVideos(prev => [newVideo, ...prev]);
+    if (supabaseConfig) await saveToCloud('videos', newVideo);
+  };
+  const handleEditVideo = async (updated: Video) => {
+    setVideos(prev => prev.map(v => v.id === updated.id ? updated : v));
+    if (supabaseConfig) await saveToCloud('videos', updated);
+  };
+  const handleDeleteVideo = async (id: string) => {
+    setVideos(prev => prev.filter(v => v.id !== id));
+    if (supabaseConfig) await deleteFromCloud('videos', id);
   };
 
-  const updatePdfProgress = (pdfId: string, opened: boolean, completed: boolean) => {
-    setProgress(prev => ({
-      ...prev,
-      pdfs: {
-        ...prev.pdfs,
-        [pdfId]: {
-          pdfId,
-          opened: prev.pdfs[pdfId]?.opened || opened,
-          completed: prev.pdfs[pdfId]?.completed || completed,
-          lastOpened: new Date().toISOString()
-        }
-      }
-    }));
+  const handleAddPdf = async (newPdf: Pdf) => {
+    setPdfs(prev => [newPdf, ...prev]);
+    if (supabaseConfig) await saveToCloud('pdfs', newPdf);
+  };
+  const handleEditPdf = async (updated: Pdf) => {
+    setPdfs(prev => prev.map(p => p.id === updated.id ? updated : p));
+    if (supabaseConfig) await saveToCloud('pdfs', updated);
+  };
+  const handleDeletePdf = async (id: string) => {
+    setPdfs(prev => prev.filter(p => p.id !== id));
+    if (supabaseConfig) await deleteFromCloud('pdfs', id);
   };
 
-  const saveQuizAttempt = (quizId: string, score: number, passed: boolean) => {
-    setProgress(prev => ({
-      ...prev,
-      quizzes: [
-        ...prev.quizzes,
-        {
-          id: `attempt-${Date.now()}`,
-          quizId,
-          score,
-          passed,
-          completedAt: new Date().toISOString()
-        }
-      ]
-    }));
+  const handleAddCollaborator = async (newColab: User) => {
+    setCollaborators(prev => [...prev, newColab]);
+    if (supabaseConfig) await saveToCloud('users', newColab);
+  };
+  const handleDeleteCollaborator = async (id: string) => {
+    setCollaborators(prev => prev.filter(c => c.id !== id));
+    if (supabaseConfig) await deleteFromCloud('users', id);
+  };
+
+  const handleAddCategory = async (newCat: Category) => {
+    setCategories(prev => [...prev, newCat]);
+    if (supabaseConfig) await saveToCloud('categories', newCat);
+  };
+  const handleEditCategory = async (updatedCat: Category) => {
+    setCategories(prev => prev.map(c => c.id === updatedCat.id ? updatedCat : c));
+    if (supabaseConfig) await saveToCloud('categories', updatedCat);
+  };
+  const handleDeleteCategory = async (catId: string) => {
+    setCategories(prev => prev.filter(c => c.id !== catId));
+    if (supabaseConfig) await deleteFromCloud('categories', catId);
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#141414]">
-      <Navbar user={user} location={location} navigate={navigate} handleLogout={handleLogout} />
+      <Navbar 
+        user={user} 
+        location={location} 
+        navigate={navigate} 
+        handleLogout={handleLogout} 
+        isCloudActive={!!supabaseConfig}
+      />
       <main className="flex-grow">
         <Routes>
-          <Route path="/login" element={<Login onLogin={handleLogin} collaborators={collaborators} />} />
+          <Route path="/login" element={<Login onLogin={handleLogin} collaborators={collaborators} onSaveCloud={updateCloudConfig} currentConfig={supabaseConfig} />} />
           <Route path="/home" element={<ProtectedRoute user={user}><Home videos={videos} pdfs={pdfs} progress={progress} /></ProtectedRoute>} />
           <Route path="/videos" element={<ProtectedRoute user={user}><Videos videos={videos} categories={categories} progress={progress} /></ProtectedRoute>} />
           <Route path="/pops" element={<ProtectedRoute user={user}><Pops pdfs={pdfs} progress={progress} /></ProtectedRoute>} />
           <Route path="/search" element={<ProtectedRoute user={user}><SearchResults videos={videos} pdfs={pdfs} progress={progress} /></ProtectedRoute>} />
           <Route path="/meu-progresso" element={<ProtectedRoute user={user}><MyProgress progress={progress} videos={videos} pdfs={pdfs} /></ProtectedRoute>} />
-          <Route path="/watch/:videoId" element={<ProtectedRoute user={user}><VideoPlayer videos={videos} progress={progress.videos} onProgressUpdate={updateVideoProgress} /></ProtectedRoute>} />
-          <Route path="/read/:pdfId" element={<ProtectedRoute user={user}><PdfViewer pdfs={pdfs} onProgressUpdate={updatePdfProgress} /></ProtectedRoute>} />
-          <Route path="/quiz/:quizId" element={<ProtectedRoute user={user}><QuizView quiz={MOCK_QUIZ} onComplete={saveQuizAttempt} /></ProtectedRoute>} />
+          <Route path="/watch/:videoId" element={<ProtectedRoute user={user}><VideoPlayer videos={videos} progress={progress.videos} onProgressUpdate={(id, t, c) => {
+            setProgress(prev => ({ ...prev, videos: { ...prev.videos, [id]: { videoId: id, watchedTime: t, completed: prev.videos[id]?.completed || c, lastWatched: new Date().toISOString() } } }));
+          }} /></ProtectedRoute>} />
+          <Route path="/read/:pdfId" element={<ProtectedRoute user={user}><PdfViewer pdfs={pdfs} onProgressUpdate={(id, o, c) => {
+            setProgress(prev => ({ ...prev, pdfs: { ...prev.pdfs, [id]: { pdfId: id, opened: prev.pdfs[id]?.opened || o, completed: prev.pdfs[id]?.completed || c, lastOpened: new Date().toISOString() } } }));
+          }} /></ProtectedRoute>} />
+          <Route path="/quiz/:quizId" element={<ProtectedRoute user={user}><QuizView quiz={MOCK_QUIZ} onComplete={(qid, s, p) => {
+            setProgress(prev => ({ ...prev, quizzes: [...prev.quizzes, { id: `att-${Date.now()}`, quizId: qid, score: s, passed: p, completedAt: new Date().toISOString() }] }));
+          }} /></ProtectedRoute>} />
           <Route path="/admin" element={
             <ProtectedRoute user={user} roles={[Role.ADMIN]}>
               <AdminDashboard 
-                videos={videos} 
-                pdfs={pdfs} 
-                categories={categories}
-                collaborators={collaborators} 
-                allProgress={progress} 
-                onAddVideo={handleAddVideo}
-                onEditVideo={handleEditVideo}
-                onDeleteVideo={handleDeleteVideo}
-                onAddPdf={handleAddPdf}
-                onEditPdf={handleEditPdf}
-                onDeletePdf={handleDeletePdf}
-                onAddCollaborator={handleAddCollaborator}
-                onDeleteCollaborator={handleDeleteCollaborator}
-                onAddCategory={handleAddCategory}
-                onEditCategory={handleEditCategory}
-                onDeleteCategory={handleDeleteCategory}
-                onRestoreBackup={handleRestoreBackup}
+                videos={videos} pdfs={pdfs} categories={categories} collaborators={collaborators} allProgress={progress}
+                onAddVideo={handleAddVideo} onEditVideo={handleEditVideo} onDeleteVideo={handleDeleteVideo}
+                onAddPdf={handleAddPdf} onEditPdf={handleEditPdf} onDeletePdf={handleDeletePdf}
+                onAddCollaborator={handleAddCollaborator} onDeleteCollaborator={handleDeleteCollaborator}
+                onAddCategory={handleAddCategory} onEditCategory={handleEditCategory} onDeleteCategory={handleDeleteCategory}
+                onRestoreBackup={() => {}}
+                cloudConfig={supabaseConfig}
+                onSaveCloud={updateCloudConfig}
               />
             </ProtectedRoute>
           } />
