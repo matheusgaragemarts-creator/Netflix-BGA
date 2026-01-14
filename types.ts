@@ -10,6 +10,7 @@ export interface User {
   email: string;
   role: Role;
   avatar?: string;
+  password?: string; // Campo opcional para armazenar a senha de acesso
 }
 
 export interface Category {

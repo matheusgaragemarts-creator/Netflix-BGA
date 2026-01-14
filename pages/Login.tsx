@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { User, Role } from '../types';
-import { DEFAULT_ADMIN } from '../constants';
+import { User, Role } from '../types.ts';
+import { DEFAULT_ADMIN } from '../constants.tsx';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -24,10 +24,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, collaborators }) => {
       if (email === DEFAULT_ADMIN.email && password === 'admin123') {
         onLogin(DEFAULT_ADMIN);
       } 
-      // 2. Verifica Colaboradores Dinâmicos
+      // 2. Verifica Colaboradores Dinâmicos com senha personalizada
       else {
         const foundUser = collaborators.find(c => c.email === email);
-        if (foundUser && password === 'barbeiro123') { // Senha padrão de demo para novos colabs
+        // Verifica se o usuário existe e se a senha fornecida coincide com a salva (ou a padrão se não houver)
+        if (foundUser && password === (foundUser.password || 'barbeiro123')) {
            onLogin(foundUser);
         } else {
           setError('Credenciais incorretas. Verifique seu e-mail ou fale com seu gestor.');

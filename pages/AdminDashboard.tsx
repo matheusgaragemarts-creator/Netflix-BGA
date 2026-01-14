@@ -61,7 +61,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfThumbnail, setPdfThumbnail] = useState<File | null>(null);
 
-  const [newUser, setNewUser] = useState({ name: '', email: '' });
+  const [newUser, setNewUser] = useState({ name: '', email: '', password: '' });
   const [newCat, setNewCat] = useState({ id: '', name: '' });
   const [isEditingCat, setIsEditingCat] = useState(false);
 
@@ -152,12 +152,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       id: `u-${Date.now()}`,
       name: newUser.name,
       email: newUser.email,
+      password: newUser.password, // Armazena a senha definida pelo admin
       role: Role.COLABORADOR,
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(newUser.name)}&background=003376&color=fff`
     };
     onAddCollaborator(user);
     setShowUserModal(false);
-    setNewUser({ name: '', email: '' });
+    setNewUser({ name: '', email: '', password: '' });
   };
 
   const startEditCategory = (cat: Category) => {
@@ -391,7 +392,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <label className="block text-[10px] font-bold text-gray-400 uppercase mb-2">E-mail de Acesso</label>
                 <input required type="email" value={newUser.email} onChange={(e) => setNewUser({...newUser, email: e.target.value})} className="w-full bg-black/40 border border-gray-800 rounded px-4 py-3 text-white outline-none focus:border-[#003376]" placeholder="joao@bga.com" />
               </div>
-              <p className="text-[10px] text-gray-500 italic">Nota: A senha padrão inicial será "barbeiro123".</p>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-2">Definir Senha</label>
+                <input required type="password" value={newUser.password} onChange={(e) => setNewUser({...newUser, password: e.target.value})} className="w-full bg-black/40 border border-gray-800 rounded px-4 py-3 text-white outline-none focus:border-[#003376]" placeholder="Senha de acesso" />
+              </div>
+              <p className="text-[10px] text-gray-500 italic">Nota: Certifique-se de informar ao barbeiro a senha definida.</p>
               <div className="flex space-x-4 pt-4">
                 <button type="submit" className="flex-grow py-3 bg-[#003376] text-white rounded font-bold hover:bg-[#001a3d] transition-colors">Criar Acesso</button>
                 <button type="button" onClick={() => setShowUserModal(false)} className="px-6 py-3 bg-white/10 text-white rounded font-bold">Cancelar</button>
