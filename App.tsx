@@ -1,18 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, Location, NavigateFunction } from 'react-router-dom';
-import { User, Role, ProgressState, Video, Pdf, Quiz, Category } from './types';
-import { DEFAULT_ADMIN, MOCK_VIDEOS, MOCK_PDFS, MOCK_QUIZ, MOCK_CATEGORIES, Icons } from './constants';
-import Home from './pages/Home';
-import VideoPlayer from './pages/VideoPlayer';
-import PdfViewer from './pages/PdfViewer';
-import QuizView from './pages/QuizView';
-import AdminDashboard from './pages/AdminDashboard';
-import Login from './pages/Login';
-import MyProgress from './pages/MyProgress';
-import Videos from './pages/Videos';
-import Pops from './pages/Pops';
-import SearchResults from './pages/SearchResults';
+import { User, Role, ProgressState, Video, Pdf, Quiz, Category } from './types.ts';
+import { DEFAULT_ADMIN, MOCK_VIDEOS, MOCK_PDFS, MOCK_QUIZ, MOCK_CATEGORIES, Icons } from './constants.tsx';
+import Home from './pages/Home.tsx';
+import VideoPlayer from './pages/VideoPlayer.tsx';
+import PdfViewer from './pages/PdfViewer.tsx';
+import QuizView from './pages/QuizView.tsx';
+import AdminDashboard from './pages/AdminDashboard.tsx';
+import Login from './pages/Login.tsx';
+import MyProgress from './pages/MyProgress.tsx';
+import Videos from './pages/Videos.tsx';
+import Pops from './pages/Pops.tsx';
+import SearchResults from './pages/SearchResults.tsx';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; roles?: Role[]; user: User | null }> = ({ children, roles, user }) => {
   if (!user) return <Navigate to="/login" />;
