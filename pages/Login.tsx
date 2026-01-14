@@ -19,15 +19,22 @@ const Login: React.FC<LoginProps> = ({ onLogin, collaborators }) => {
     setError(null);
     setIsLoading(true);
 
+    // Normalização no Login: Garante que espaços e letras maiúsculas não quebrem o acesso
+    const normalizedEmail = email.toLowerCase().trim();
+
     setTimeout(() => {
       // 1. Verifica Admin Padrão
-      if (email === DEFAULT_ADMIN.email && password === 'admin123') {
+      if (normalizedEmail === DEFAULT_ADMIN.email.toLowerCase().trim() && password === 'admin123') {
         onLogin(DEFAULT_ADMIN);
       } 
-      // 2. Verifica Colaboradores Dinâmicos com senha personalizada
+      // 2. Verifica Colaboradores Dinâmicos
       else {
-        const foundUser = collaborators.find(c => c.email === email);
-        // Verifica se o usuário existe e se a senha fornecida coincide com a salva (ou a padrão se não houver)
+        // Busca ignorando case do e-mail
+        const foundUser = collaborators.find(c => 
+          c.email.toLowerCase().trim() === normalizedEmail
+        );
+        
+        // Verifica se o usuário existe e se a senha coincide
         if (foundUser && password === (foundUser.password || 'barbeiro123')) {
            onLogin(foundUser);
         } else {

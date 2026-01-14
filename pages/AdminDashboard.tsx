@@ -148,17 +148,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
+    // Normalização Crítica: E-mail sempre minúsculo e sem espaços
+    const normalizedEmail = newUser.email.toLowerCase().trim();
+    
     const user: User = {
       id: `u-${Date.now()}`,
-      name: newUser.name,
-      email: newUser.email,
-      password: newUser.password, // Armazena a senha definida pelo admin
+      name: newUser.name.trim(),
+      email: normalizedEmail,
+      password: newUser.password, 
       role: Role.COLABORADOR,
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(newUser.name)}&background=003376&color=fff`
     };
+    
     onAddCollaborator(user);
     setShowUserModal(false);
     setNewUser({ name: '', email: '', password: '' });
+    alert(`Acesso criado com sucesso para ${user.name}!`);
   };
 
   const startEditCategory = (cat: Category) => {
