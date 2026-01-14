@@ -155,6 +155,14 @@ const App: React.FC = () => {
     navigate(selectedUser.role === Role.ADMIN ? '/admin' : '/home');
   };
 
+  const handleRegister = async (newUser: User) => {
+    setCollaborators(prev => [...prev, newUser]);
+    if (supabaseConfig) await saveToCloud('users', newUser);
+    setUser(newUser);
+    localStorage.setItem('bga_user', JSON.stringify(newUser));
+    navigate('/home');
+  };
+
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('bga_user');
@@ -228,7 +236,7 @@ const App: React.FC = () => {
       />
       <main className="flex-grow">
         <Routes>
-          <Route path="/login" element={<Login onLogin={handleLogin} collaborators={collaborators} onSaveCloud={updateCloudConfig} currentConfig={supabaseConfig} />} />
+          <Route path="/login" element={<Login onLogin={handleLogin} onRegister={handleRegister} collaborators={collaborators} onSaveCloud={updateCloudConfig} currentConfig={supabaseConfig} />} />
           <Route path="/home" element={<ProtectedRoute user={user}><Home videos={videos} pdfs={pdfs} progress={progress} /></ProtectedRoute>} />
           <Route path="/videos" element={<ProtectedRoute user={user}><Videos videos={videos} categories={categories} progress={progress} /></ProtectedRoute>} />
           <Route path="/pops" element={<ProtectedRoute user={user}><Pops pdfs={pdfs} progress={progress} /></ProtectedRoute>} />
