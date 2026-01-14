@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
-import { Video, Pdf, User, ProgressState, Role, Category } from '../types';
-import { Icons } from '../constants';
+import { Video, Pdf, User, ProgressState, Role, Category } from '../types.ts';
+import { Icons } from '../constants.tsx';
 
 interface AdminDashboardProps {
   videos: Video[];
@@ -16,6 +16,7 @@ interface AdminDashboardProps {
   onEditPdf: (pdf: Pdf) => void;
   onDeletePdf: (id: string) => void;
   onAddCollaborator: (user: User) => void;
+  onDeleteCollaborator: (id: string) => void;
   onAddCategory: (cat: Category) => void;
   onEditCategory: (cat: Category) => void;
   onDeleteCategory: (id: string) => void;
@@ -35,6 +36,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onEditPdf,
   onDeletePdf,
   onAddCollaborator,
+  onDeleteCollaborator,
   onAddCategory,
   onEditCategory,
   onDeleteCategory,
@@ -142,6 +144,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       editingPdfId ? onEditPdf(pdf) : onAddPdf(pdf);
       setShowPdfModal(false); setEditingPdfId(null);
     });
+  };
+
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    const user: User = {
+      id: `u-${Date.now()}`,
+      name: newUser.name,
+      email: newUser.email,
+      role: Role.COLABORADOR,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(newUser.name)}&background=003376&color=fff`
+    };
+    onAddCollaborator(user);
+    setShowUserModal(false);
+    setNewUser({ name: '', email: '' });
   };
 
   const startEditCategory = (cat: Category) => {
@@ -260,11 +276,57 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           </div>
         )}
+
+        {activeTab === 'users' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-bold">Equipe da Barbearia</h3>
+              <button onClick={() => setShowUserModal(true)} className="px-4 py-2 bg-[#003376] text-white rounded font-bold flex items-center space-x-2"><Icons.Plus /> <span>Novo Barbeiro</span></button>
+            </div>
+            <div className="bg-[#181818] rounded-lg border border-gray-800 overflow-hidden">
+              <table className="w-full text-left">
+                <thead className="bg-white/5 text-gray-400 text-xs uppercase tracking-wider">
+                  <tr>
+                    <th className="px-6 py-4">Barbeiro</th>
+                    <th className="px-6 py-4">E-mail de Acesso</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800">
+                  {collaborators.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-12 text-center text-gray-500 italic">Nenhum barbeiro cadastrado além do administrador.</td>
+                    </tr>
+                  ) : (
+                    collaborators.map(user => (
+                      <tr key={user.id} className="hover:bg-white/5 transition-colors group">
+                        <td className="px-6 py-4 flex items-center space-x-3">
+                          <img src={user.avatar} className="w-8 h-8 rounded-full border border-gray-700" alt="" />
+                          <span className="font-bold text-sm">{user.name}</span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-400">{user.email}</td>
+                        <td className="px-6 py-4">
+                          <span className="px-2 py-0.5 bg-green-500/10 text-green-500 text-[10px] font-bold rounded">ATIVO</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <button onClick={() => confirm(`Remover acesso de ${user.name}?`) && onDeleteCollaborator(user.id)} className="text-gray-500 hover:text-red-500 transition-colors">
+                            <Icons.Trash />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* MODAL CATEGORIA */}
       {showCatModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-[#181818] border border-gray-800 rounded-lg w-full max-w-sm p-8 shadow-2xl">
             <h2 className="text-2xl font-bold mb-6">{isEditingCat ? 'Editar' : 'Nova'} Categoria</h2>
             <form onSubmit={handleSaveCategory} className="space-y-6">
@@ -280,7 +342,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* MODAL VÍDEO */}
       {showVideoModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-[#181818] border border-gray-800 rounded-lg w-full max-w-lg p-8 shadow-2xl relative overflow-hidden">
             {isUploading && (
               <div className="absolute inset-0 bg-black/90 z-20 flex flex-col items-center justify-center p-8 text-center">
@@ -315,7 +377,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
-      {/* Outros modais seguem o mesmo padrão de segurança... */}
+      {/* MODAL USER (EQUIPE) */}
+      {showUserModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#181818] border border-gray-800 rounded-lg w-full max-w-sm p-8 shadow-2xl">
+            <h2 className="text-2xl font-bold mb-6">Cadastrar Barbeiro</h2>
+            <form onSubmit={handleCreateUser} className="space-y-5">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-2">Nome do Barbeiro</label>
+                <input required autoFocus type="text" value={newUser.name} onChange={(e) => setNewUser({...newUser, name: e.target.value})} className="w-full bg-black/40 border border-gray-800 rounded px-4 py-3 text-white outline-none focus:border-[#003376]" placeholder="Ex: João da Silva" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-2">E-mail de Acesso</label>
+                <input required type="email" value={newUser.email} onChange={(e) => setNewUser({...newUser, email: e.target.value})} className="w-full bg-black/40 border border-gray-800 rounded px-4 py-3 text-white outline-none focus:border-[#003376]" placeholder="joao@bga.com" />
+              </div>
+              <p className="text-[10px] text-gray-500 italic">Nota: A senha padrão inicial será "barbeiro123".</p>
+              <div className="flex space-x-4 pt-4">
+                <button type="submit" className="flex-grow py-3 bg-[#003376] text-white rounded font-bold hover:bg-[#001a3d] transition-colors">Criar Acesso</button>
+                <button type="button" onClick={() => setShowUserModal(false)} className="px-6 py-3 bg-white/10 text-white rounded font-bold">Cancelar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

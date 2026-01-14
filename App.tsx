@@ -162,6 +162,7 @@ const App: React.FC = () => {
   const handleDeletePdf = (id: string) => setPdfs(prev => prev.filter(p => p.id !== id));
 
   const handleAddCollaborator = (newColab: User) => setCollaborators(prev => [...prev, newColab]);
+  const handleDeleteCollaborator = (id: string) => setCollaborators(prev => prev.filter(c => c.id !== id));
 
   const handleAddCategory = (newCat: Category) => setCategories(prev => [...prev, newCat]);
   const handleEditCategory = (updatedCat: Category) => setCategories(prev => prev.map(c => c.id === updatedCat.id ? updatedCat : c));
@@ -242,6 +243,7 @@ const App: React.FC = () => {
                 onEditPdf={handleEditPdf}
                 onDeletePdf={handleDeletePdf}
                 onAddCollaborator={handleAddCollaborator}
+                onDeleteCollaborator={handleDeleteCollaborator}
                 onAddCategory={handleAddCategory}
                 onEditCategory={handleEditCategory}
                 onDeleteCategory={handleDeleteCategory}
